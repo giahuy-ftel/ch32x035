@@ -1,0 +1,10 @@
+# Build outputs
+/build_CH32x035_Sample/
+
+# Local tool installs
+/tools/MRS_Toolchain_Linux_x64_V1.92/
+/tools/MRS_Toolchain_Linux_x64_V1.92.1/
+/tools/wlink/
+
+# VS Code state
+/.vscode/*.log
