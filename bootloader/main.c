@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-#define
+// #define
 
 __attribute__((naked, section(".init"))) void _start(void) {
    __asm__ volatile(".option norvc\n\t"
@@ -38,10 +38,42 @@ uint32_t crc32(const uint8_t *data, uint32_t length) {
    return crc ^ 0xFFFFFFFF;
 }
 
-int main(void) {
-   // TODO: Implement Raw UART polling
-   // TODO: Implement Raw Flash programming
-
-   while (1) {
+void pull_bytes(uint8_t *buf, uint32_t len) {
+   for (uint32_t i = 0; i < len; i++) {
+      // while (USART_GetFlagStatus(USART2, USART_FLAG_RXNE) == RESET)
+      //    ;
+      // buf[i] = USART_ReceiveData(USART2);
    }
+}
+
+void send_word(uint32_t word) {
+   uint8_t *bytes = (uint8_t *)&word;
+   for (int i = 0; i < 4; i++) {
+      // while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET)
+      //    ;
+      // USART_SendData(USART2, bytes[i]);
+   }
+}
+
+void uart_boot() {
+}
+
+void spi_boot() {
+}
+
+int main(void) {
+
+   // init gpioA
+   // configure pin A1, input, check A1 == HIGH. if no, jump to app
+   //
+   // configure USART2 (19200, 8N1, no flow control, little endian)
+   // configure SPI0 (spi 1-1-1)
+   //
+   // poll:
+   // usart send offset 0x0, if receive data back -> disable everything but usart2 -> uart_boot()
+   // spi send offset 0x0 (cmd 0x3), if receive data back -> disable everything but spi0 -> spi_boot()
+   // if nothing, j poll
+
+   while (1)
+      ;
 }
