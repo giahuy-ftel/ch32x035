@@ -11,3 +11,4 @@
 
 /blinky/build_*
 /bootloader/build_*
+.clangd

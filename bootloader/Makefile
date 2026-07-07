@@ -9,18 +9,12 @@ TARGET = $(OBJECTS_DIR)/$(NAME_MODULE).elf
 ##############################################################################
 # Project files    #
 ##############################################################################
-include sources/device/Makefile
-include sources/platform/Makefile
-include sources/application/Makefile
 
-SOURCES_ 		= $(notdir $(SOURCES))
-OBJECTS 		+= $(addprefix $(OBJECTS_DIR)/, $(SOURCES_:.c=.o))
+SOURCES_C = main.c
+LDFILE = ch32x035.ld
 
-SOURCES_CPP_ 	= $(notdir $(SOURCES_CPP))
-OBJECTS 		+= $(addprefix $(OBJECTS_DIR)/, $(SOURCES_CPP_:.cpp=.o))
-
-SOURCES_ASM_ 	= $(notdir $(SOURCES_ASM))
-OBJECTS			+= $(addprefix $(OBJECTS_DIR)/, $(SOURCES_ASM_:.S=.o))
+SOURCES_C_ = $(notdir $(SOURCES_C))
+OBJECTS    = $(addprefix $(OBJECTS_DIR)/, $(SOURCES_C_:.c=.o))
 
 ##############################################################################
 
