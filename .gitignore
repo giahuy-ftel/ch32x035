@@ -1,0 +1,12 @@
+# Build outputs
+build_application/
+build_bootloader/
+build_combined/
+
+# Toolchain download (sits at repo root, not under tools/)
+MRS_Toolchain_Linux_x64_V1.92.tar.xz
+*.tar.xz
+
+# Object/dependency files, in case any end up outside the build_* dirs
+*.o
+*.d
