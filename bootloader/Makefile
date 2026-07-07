@@ -1,6 +1,6 @@
 Print = @echo
 
-NAME_MODULE = CH32x035_Sample
+NAME_MODULE = bootloader
 PROJECT = $(NAME_MODULE)
 
 OBJECTS_DIR = build_$(NAME_MODULE)
@@ -38,7 +38,7 @@ OBJECTS			+= $(addprefix $(OBJECTS_DIR)/, $(SOURCES_ASM_:.S=.o))
 #|  -Ofast    | O3 with none math cals           |     (---)    |         |     (+)    |    (+++)    |
 #|------------|----------------------------------|--------------|---------|------------|-------------|
 # NOTE: For debugging, -g option is mandatory
-OPTIMIZE_OPTION = -O0 -g
+OPTIMIZE_OPTION = -Os -g
 
 TOOLS_DIR		?= $(CURDIR)/tools
 MRS_DIR			?= $(wildcard $(TOOLS_DIR)/MRS_Toolchain_MAC_V192)
@@ -74,12 +74,14 @@ GENERAL_FLAGS += $(OPTIMIZE_OPTION)
 COMPILER_FLAGS += $(MARCH) $(MABI) -MD #-fstrict-volatile-bitfields -fno-strict-aliasing -fno-common -fno-builtin-printf		
 
 # C compiler flags
-CFLAGS += $(GENERAL_FLAGS) $(COMPILER_FLAGS)
+CFLAGS += $(GENERAL_FLAGS) $(COMPILER_FLAGS) -ffunction-sections -fdata-sections
 
 # C++ compiler flags
 CPPFLAGS +=					\
 		$(GENERAL_FLAGS)	\
 		$(COMPILER_FLAGS)	\
+		-ffunction-sections \
+		-fdata-sections     \
 		-fno-rtti			\
 		-fno-exceptions		\
 		-fno-use-cxa-atexit	\
@@ -89,7 +91,7 @@ CPPFLAGS +=					\
 LDFLAGS += 	-lgcc \
 		-nodefaultlibs \
 		-nostartfiles \
-		-Wl,-T,$(LDFILE),-Map,$(OBJECTS_DIR)/$(PROJECT).map,--print-memory-usage \
+		-Wl,-T,$(LDFILE),-Map,$(OBJECTS_DIR)/$(PROJECT).map,--print-memory-usage,--gc-sections \
 		$(MARCH) $(MABI) \
 	
 all: create $(TARGET)

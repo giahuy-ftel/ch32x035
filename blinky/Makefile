@@ -1,6 +1,6 @@
 Print = @echo
 
-NAME_MODULE = CH32x035_Sample
+NAME_MODULE = blinky
 PROJECT = $(NAME_MODULE)
 
 OBJECTS_DIR = build_$(NAME_MODULE)

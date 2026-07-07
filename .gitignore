@@ -8,3 +8,6 @@
 
 # VS Code state
 /.vscode/*.log
+
+/blinky/build_*
+/bootloader/build_*
