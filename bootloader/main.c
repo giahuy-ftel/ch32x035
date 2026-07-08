@@ -108,7 +108,7 @@ int main(void) {
 }
 
 uint32_t crc32(const uint8_t *data, uint32_t length) {
-   uint32_t crc = 0xFFFFFFFF;
+   volatile uint32_t crc = 0xFFFFFFFF;
    for (uint32_t i = 0; i < length; i++) {
       crc ^= ((uint32_t)data[i] << 24);
       for (int j = 0; j < 8; j++) {
