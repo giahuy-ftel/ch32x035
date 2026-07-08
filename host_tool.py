@@ -132,6 +132,35 @@ def main():
 
     print("Stateless Host Tool running. Waiting for MCU requests...")
     try:
+        # kick-start: if MCU already sent first request before we opened the port,
+        # that request is lost. Both sides would deadlock. Do a short initial read;
+        # if it times out, assume offset 0 was missed and send image[0:4] to unblock.
+        old_timeout = ser.timeout
+        ser.timeout = 2
+        req = ser.read(4)
+        ser.timeout = old_timeout
+        if len(req) != 4:
+            print("No initial request received, sending image[0:4] to unblock MCU...")
+            ser.write(image[0:4])
+        else:
+            offset = struct.unpack("<I", req)[0]
+            if offset == 0xFFFFFFFF:
+                print("\n Firmware update successful! MCU is booting application...")
+                ser.close()
+                return
+            if offset == 0xDEADBEEF:
+                print("\n CRC FAILED!")
+                ser.close()
+                return
+            if offset < len(image):
+                ser.write(image[offset : offset + 4])
+                print(
+                    f"MCU requested offset: {offset}/{len(image)} (0x{offset:08X})",
+                    end="\r",
+                )
+            else:
+                ser.write(b"\xff\xff\xff\xff")
+
         while True:
             req = ser.read(4)
             if len(req) != 4:

@@ -12,7 +12,7 @@ __attribute__((naked, section(".init"))) void _start(void) {
 }
 
 #define kLedPin 12
-#define kDelayTicks 300000u
+#define kDelayTicks 150000u
 
 void delay_loop(volatile uint32_t count) {
    while (count-- != 0u) {

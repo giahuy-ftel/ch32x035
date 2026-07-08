@@ -7,6 +7,9 @@
 #define GPIOA_INDR (*(volatile uint32_t *)0x40010808)
 #define GPIOA_OUTDR (*(volatile uint32_t *)0x4001080C)
 
+#define GPIOB_CFGHR (*(volatile uint32_t *)0x40010C04)
+#define GPIOB_OUTDR (*(volatile uint32_t *)0x40010C0C)
+
 #define USART2_STATR (*(volatile uint32_t *)0x40004400)
 #define USART2_DATAR (*(volatile uint32_t *)0x40004404)
 #define USART2_BRR (*(volatile uint32_t *)0x40004408)
@@ -48,10 +51,10 @@ uint32_t crc32(const uint8_t *data, uint32_t length);
 void pull_bytes(uint8_t *buf, uint32_t len);
 void send_word(uint32_t word);
 
-void turn_on_led() {
-}
+void turn_on_led();
 
 void init_gpioA();
+void init_gpioB();
 void init_usart2();
 void init_spi0();
 void disable_usart2();
@@ -79,6 +82,7 @@ int main(void) {
    }
 
    // (consider turning on led for visual ease)
+   init_gpioB();
    turn_on_led();
    //
    // init usart2
@@ -99,11 +103,6 @@ int main(void) {
    // spi_boot();
    //
    // if nothing, j poll
-
-   disable_usart2();
-
-   jump_func jump_to_app = (jump_func)0x2000;
-   jump_to_app();
 
    while (1)
       ;
@@ -147,7 +146,20 @@ void init_gpioA() {
    RCC_APB2PCENR |= 0b100;
 }
 
-// void turn_on_led(){}
+void init_gpioB() {
+   RCC_APB2PCENR |= (0x1 << 3);
+}
+
+void turn_on_led() {
+   // set output mode 50mhz
+   GPIOB_CFGHR |= (0x3 << 16);
+
+   // set pull-up & pull-down mode
+   // GPIOB_CFGHR |= (0x1 << 19);
+   GPIOB_CFGHR &= ~(0x3 << 18);
+   GPIOB_OUTDR |= (0x1 << 12);
+}
+
 void init_usart2() {
    RCC_APB1PCENR |= (0x1 << 17);
    USART2_CTLR1 |= (0x1 << 13);
@@ -238,13 +250,14 @@ void uart_boot() {
    }
 
    uint8_t sram_buffer[256];
-   uint32_t pages = header.payload_size / 256;
+   // round up
+   uint32_t pages = (header.payload_size + 255) / 256;
 
    for (uint32_t no_page = 0; no_page < pages; ++no_page) {
 
       // fetch page from host
       for (uint32_t offset = 0; offset < 256; offset += 4) {
-         send_word(header.flash_addr + offset + no_page * 256);
+         send_word(32 + offset + no_page * 256);
          pull_bytes(sram_buffer + offset, 4);
       }
 
@@ -266,6 +279,9 @@ void uart_boot() {
    while (((USART2_STATR >> 6) & 0x1) == 0)
       ;
    disable_usart2();
+
+   jump_func jump_to_app = (jump_func)header.flash_addr;
+   jump_to_app();
 }
 
 void spi_boot() {
@@ -358,7 +374,7 @@ void flash_write_page_fast(uint32_t page_addr, const uint8_t *data_buffer) {
 
    // write to buffer
    for (uint32_t i = 0; i < 64; i += 1) {
-      *((uint32_t *)0x08000000) = *((uint32_t *)data_buffer + i);
+      *((uint32_t *)(page_addr + 4 * i)) = *((uint32_t *)data_buffer + i);
 
       // cache data into buffer
       FLASH_CTLR |= (0x1 << 18);
