@@ -3,19 +3,20 @@
 #define RCC_APB2PCENR (*(volatile uint32_t *)0x40021018)
 #define RCC_APB1PCENR (*(volatile uint32_t *)0x4002101C)
 
-#define GPIOA_CFGLR (*(volatile uint32_t *)40010800)
-#define GPIOA_INDR (*(volatile uint32_t *)40010808)
+#define GPIOA_CFGLR (*(volatile uint32_t *)0x40010800)
+#define GPIOA_INDR (*(volatile uint32_t *)0x40010808)
+#define GPIOA_OUTDR (*(volatile uint32_t *)0x4001080C)
 
-#define USART2_STATR (*(volatile uint32_t *)40004400)
-#define USART2_DATAR (*(volatile uint32_t *)40004404)
-#define USART2_BRR (*(volatile uint32_t *)40004408)
-#define USART2_CTLR1 (*(volatile uint32_t *)4000440C)
+#define USART2_STATR (*(volatile uint32_t *)0x40004400)
+#define USART2_DATAR (*(volatile uint32_t *)0x40004404)
+#define USART2_BRR (*(volatile uint32_t *)0x40004408)
+#define USART2_CTLR1 (*(volatile uint32_t *)0x4000440C)
 
-#define FLASH_KEYR (*(volatile uint32_t *)40022004)
-#define FLASH_CTLR (*(volatile uint32_t *)40022010)
-#define FLASH_ADDR (*(volatile uint32_t *)40022014)
+#define FLASH_KEYR (*(volatile uint32_t *)0x40022004)
+#define FLASH_CTLR (*(volatile uint32_t *)0x40022010)
+#define FLASH_ADDR (*(volatile uint32_t *)0x40022014)
 // used to unlock/lock fast programming/erase mode
-#define FLASH_MODEKEYR (*(volatile uint32_t *)40022024)
+#define FLASH_MODEKEYR (*(volatile uint32_t *)0x40022024)
 
 __attribute__((naked, section(".init"))) void _start(void) {
    __asm__ volatile(".option norvc\n\t"
@@ -84,13 +85,33 @@ void spi_boot() {
 }
 
 void init_gpioA() {
+   RCC_APB2PCENR |= 0b100;
+}
+
+void config_pin_A1() {
+   GPIOA_CFGLR &= ~0x30; // set bit [5:4] to 0 for input mode
+
+   // set pull-up & pull-down mode
+   GPIOA_CFGLR |= 0x80;
+   GPIOA_CFGLR &= ~0x40;
+
+   // set pull-down
+   GPIOA_OUTDR &= ~0x2;
 }
 
 int main(void) {
 
-   // init gpioA
-   // configure pin A1, input, check A1 == HIGH. if no, jump to app
-   //
+   init_gpioA();
+
+   // configure pin A1, input
+   config_pin_A1();
+
+   // check A1 == HIGH. if no, jump to app
+   if ((GPIOA_INDR & 0x2) != 2) {
+      jump_func jump_to_app = (jump_func)0x2000;
+      jump_to_app();
+   }
+
    // (consider turning on led for visual ease)
    // turn_on_led();
    //
