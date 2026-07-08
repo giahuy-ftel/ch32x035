@@ -47,7 +47,10 @@ typedef void (*jump_func)(void);
 uint32_t crc32(const uint8_t *data, uint32_t length);
 void pull_bytes(uint8_t *buf, uint32_t len);
 void send_word(uint32_t word);
-// void turn_on_led(){}
+
+void turn_on_led() {
+}
+
 void init_gpioA();
 void init_usart2();
 void init_spi0();
@@ -76,7 +79,7 @@ int main(void) {
    }
 
    // (consider turning on led for visual ease)
-   // turn_on_led();
+   turn_on_led();
    //
    // init usart2
    init_usart2();
@@ -96,6 +99,8 @@ int main(void) {
    // spi_boot();
    //
    // if nothing, j poll
+
+   disable_usart2();
 
    jump_func jump_to_app = (jump_func)0x2000;
    jump_to_app();
@@ -176,7 +181,7 @@ void config_usart2() {
    GPIOA_CFGLR &= ~(0x1 << 15);
 
    // 8 bit data
-   USART2_CTLR1 |= (0x1 << 12);
+   USART2_CTLR1 &= ~(0x1 << 12);
 
    // no parity
    USART2_CTLR1 &= ~(0x1 << 10);
@@ -233,7 +238,7 @@ void uart_boot() {
    }
 
    uint8_t sram_buffer[256];
-   int pages = header.payload_size / 256;
+   uint32_t pages = header.payload_size / 256;
 
    for (uint32_t no_page = 0; no_page < pages; ++no_page) {
 
@@ -243,6 +248,7 @@ void uart_boot() {
          pull_bytes(sram_buffer + offset, 4);
       }
 
+      flash_erase_page_fast(256 * no_page + (header.flash_addr | 0x08000000));
       flash_write_page_fast(256 * no_page + (header.flash_addr | 0x08000000), sram_buffer);
    }
 
@@ -279,7 +285,7 @@ void disable_spi0() {
 
 void flash_erase_page_fast(uint32_t page_addr) {
    // unlock flash
-   if ((FLASH_KEYR >> 7) & 0x1) {
+   if ((FLASH_CTLR >> 7) & 0x1) {
       FLASH_KEYR = 0x45670123;
       FLASH_KEYR = 0xCDEF89AB;
    }
@@ -288,7 +294,7 @@ void flash_erase_page_fast(uint32_t page_addr) {
    //    sw_reset();
 
    // unlock fast programmint mode
-   if ((FLASH_KEYR >> 15) & 0x1) {
+   if ((FLASH_CTLR >> 15) & 0x1) {
       FLASH_MODEKEYR = 0x45670123;
       FLASH_MODEKEYR = 0xCDEF89AB;
    }
@@ -312,37 +318,29 @@ void flash_erase_page_fast(uint32_t page_addr) {
    while (FLASH_STATR & 0x1 || ((FLASH_STATR >> 5) & 0x1) == 0)
       ;
    // set EOP to 0
-   FLASH_STATR &= ~(0x1 << 5);
+   FLASH_STATR |= (0x1 << 5); // write 1 to clear EOP
 
    // disable fast erase
    FLASH_CTLR &= ~(0x1 << 17);
 
    // lock fast programming mode
-   FLASH_KEYR |= (0x1 << 15);
+   FLASH_CTLR |= (0x1 << 15);
    // lock flash
-   FLASH_KEYR |= (0x1 << 7);
+   FLASH_CTLR |= (0x1 << 7);
 }
 
 void flash_write_page_fast(uint32_t page_addr, const uint8_t *data_buffer) {
-   flash_erase_page_fast(page_addr);
-
    // unlock flash
-   if ((FLASH_KEYR >> 7) & 0x1) {
+   if ((FLASH_CTLR >> 7) & 0x1) {
       FLASH_KEYR = 0x45670123;
       FLASH_KEYR = 0xCDEF89AB;
    }
-   // if LOCK bit == 1, reset
-   // if ((FLASH_KEYR >> 7) & 0x1)
-   //    sw_reset();
 
    // unlock fast programmint mode
-   if ((FLASH_KEYR >> 15) & 0x1) {
+   if ((FLASH_CTLR >> 15) & 0x1) {
       FLASH_MODEKEYR = 0x45670123;
       FLASH_MODEKEYR = 0xCDEF89AB;
    }
-   // if FLOCK bit == 1, reset
-   // if ((FLASH_KEYR >> 15) & 0x1)
-   //    sw_reset();
 
    // wait till BSY bit == 0
    while (FLASH_STATR & 0x1)
@@ -356,11 +354,11 @@ void flash_write_page_fast(uint32_t page_addr, const uint8_t *data_buffer) {
    while (FLASH_STATR & 0x1 || ((FLASH_STATR >> 5) & 0x1) == 0)
       ;
    // set EOP to 0
-   FLASH_STATR &= ~(0x1 << 5);
+   FLASH_STATR |= (0x1 << 5); // write 1 to clear EOP
 
    // write to buffer
    for (uint32_t i = 0; i < 64; i += 1) {
-      *((uint32_t *)page_addr + i) = *((uint32_t *)data_buffer + i);
+      *((uint32_t *)0x08000000) = *((uint32_t *)data_buffer + i);
 
       // cache data into buffer
       FLASH_CTLR |= (0x1 << 18);
@@ -377,14 +375,14 @@ void flash_write_page_fast(uint32_t page_addr, const uint8_t *data_buffer) {
    // wait till BSY == 0 or EOP == 1
    while (FLASH_STATR & 0x1 || ((FLASH_STATR >> 5) & 0x1) == 0)
       ;
-   // set EOP to 0
-   FLASH_STATR &= ~(0x1 << 5);
+
+   FLASH_STATR |= (0x1 << 5); // write 1 to clear EOP
 
    // disable fast programming
    FLASH_CTLR &= ~(0x1 << 16);
 
    // lock fast programming mode
-   FLASH_KEYR |= (0x1 << 15);
+   FLASH_CTLR |= (0x1 << 15);
    // lock flash
-   FLASH_KEYR |= (0x1 << 7);
+   FLASH_CTLR |= (0x1 << 7);
 }

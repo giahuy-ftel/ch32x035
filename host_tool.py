@@ -150,10 +150,7 @@ def main():
             if offset < len(image):
                 chunk = image[offset : offset + 4]
                 ser.write(chunk)
-                print(
-                    f"MCU requested offset: {offset}/{len(image)} (0x{offset:08X})",
-                    end="\r",
-                )
+                print(f"MCU requested offset: {offset}/{len(image)} (0x{offset:08X})")
             else:
                 ser.write(b"\xff\xff\xff\xff")
     except KeyboardInterrupt:
