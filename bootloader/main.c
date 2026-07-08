@@ -44,20 +44,17 @@ typedef struct {
 typedef void (*jump_func)(void);
 
 uint32_t crc32(const uint8_t *data, uint32_t length);
-
 void pull_bytes(uint8_t *buf, uint32_t len);
-
 void send_word(uint32_t word);
-void init_gpioA();
-
 // void turn_on_led(){}
+void init_gpioA();
 void init_usart2();
-void config_usart2();
 void init_spi0();
+void config_pin_A1();
+void config_usart2();
 void config_spi0();
 void uart_boot();
 void spi_boot();
-void config_pin_A1();
 
 int main(void) {
 
@@ -88,11 +85,14 @@ int main(void) {
 
    // poll:
    // usart send offset 0x0, if receive data back -> disable everything but usart2
-   // uart_boot();
+   uart_boot();
    // spi send offset 0x0 (cmd 0x3), if receive data back -> disable everything but spi0 ->
    // spi_boot();
    //
    // if nothing, j poll
+
+   jump_func jump_to_app = (jump_func)0x2000;
+   jump_to_app();
 
    while (1)
       ;
@@ -113,20 +113,22 @@ uint32_t crc32(const uint8_t *data, uint32_t length) {
    return crc ^ 0xFFFFFFFF;
 }
 
-void pull_bytes(uint8_t *buf, uint32_t len) {
-   for (uint32_t i = 0; i < len; i++) {
-      // while (USART_GetFlagStatus(USART2, USART_FLAG_RXNE) == RESET)
-      //    ;
-      // buf[i] = USART_ReceiveData(USART2);
-   }
-}
-
 void send_word(uint32_t word) {
    uint8_t *bytes = (uint8_t *)&word;
    for (int i = 0; i < 4; i++) {
-      // while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET)
-      //    ;
-      // USART_SendData(USART2, bytes[i]);
+      // TXE bit
+      while (((USART2_STATR >> 7) & 0x1) == 0)
+         ;
+      USART2_DATAR = bytes[i];
+   }
+}
+
+void pull_bytes(uint8_t *buf, uint32_t len) {
+   for (uint32_t i = 0; i < len; i++) {
+      // RXNE bit
+      while (((USART2_STATR >> 5) & 0x1) == 0)
+         ;
+      buf[i] = (uint8_t)(USART2_DATAR & 0xff);
    }
 }
 
@@ -137,6 +139,20 @@ void init_gpioA() {
 // void turn_on_led(){}
 void init_usart2() {
    USART2_CTLR1 |= (0x1 << 13);
+}
+
+void init_spi0() {
+}
+
+void config_pin_A1() {
+   GPIOA_CFGLR &= ~0x30; // set bit [5:4] to 0 for input mode
+
+   // set pull-up & pull-down mode
+   GPIOA_CFGLR |= 0x80;
+   GPIOA_CFGLR &= ~0x40;
+
+   // set pull-down
+   GPIOA_OUTDR &= ~0x2;
 }
 
 void config_usart2() {
@@ -171,9 +187,6 @@ void config_usart2() {
    USART2_CTLR3 &= ~(0x3 << 8);
 }
 
-void init_spi0() {
-}
-
 void config_spi0() {
 }
 
@@ -181,15 +194,4 @@ void uart_boot() {
 }
 
 void spi_boot() {
-}
-
-void config_pin_A1() {
-   GPIOA_CFGLR &= ~0x30; // set bit [5:4] to 0 for input mode
-
-   // set pull-up & pull-down mode
-   GPIOA_CFGLR |= 0x80;
-   GPIOA_CFGLR &= ~0x40;
-
-   // set pull-down
-   GPIOA_OUTDR &= ~0x2;
 }
