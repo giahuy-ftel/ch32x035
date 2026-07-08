@@ -52,7 +52,6 @@ void pull_bytes(uint8_t *buf, uint32_t len);
 void send_word(uint32_t word);
 
 void turn_on_led();
-
 void init_gpioA();
 void init_gpioB();
 void init_usart2();
@@ -84,10 +83,10 @@ int main(void) {
    // (consider turning on led for visual ease)
    init_gpioB();
    turn_on_led();
-   //
+
    // init usart2
    init_usart2();
-   //
+
    // configure USART2 (19200, 8N1, no flow control, little endian)
    config_usart2();
 
@@ -305,18 +304,11 @@ void flash_erase_page_fast(uint32_t page_addr) {
       FLASH_KEYR = 0x45670123;
       FLASH_KEYR = 0xCDEF89AB;
    }
-   // if LOCK bit == 1, reset
-   // if ((FLASH_KEYR >> 7) & 0x1)
-   //    sw_reset();
-
    // unlock fast programmint mode
    if ((FLASH_CTLR >> 15) & 0x1) {
       FLASH_MODEKEYR = 0x45670123;
       FLASH_MODEKEYR = 0xCDEF89AB;
    }
-   // if FLOCK bit == 1, reset
-   // if ((FLASH_KEYR >> 15) & 0x1)
-   //    sw_reset();
 
    // wait till BSY bit == 0
    while (FLASH_STATR & 0x1)
