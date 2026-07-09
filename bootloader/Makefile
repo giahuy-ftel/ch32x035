@@ -65,7 +65,7 @@ MABI = -mabi=ilp32
 
 GENERAL_FLAGS += $(OPTIMIZE_OPTION)
 
-COMPILER_FLAGS += $(MARCH) $(MABI) -MD #-fstrict-volatile-bitfields -fno-strict-aliasing -fno-common -fno-builtin-printf		
+COMPILER_FLAGS += $(MARCH) $(MABI) -MD -fno-tree-loop-distribute-patterns -fno-builtin -flto #-fstrict-volatile-bitfields -fno-strict-aliasing -fno-common -fno-builtin-printf		
 
 # C compiler flags
 CFLAGS += $(GENERAL_FLAGS) $(COMPILER_FLAGS) -ffunction-sections -fdata-sections
@@ -85,7 +85,8 @@ CPPFLAGS +=					\
 LDFLAGS += 	-lgcc \
 		-nodefaultlibs \
 		-nostartfiles \
-		-Wl,-T,$(LDFILE),-Map,$(OBJECTS_DIR)/$(PROJECT).map,--print-memory-usage,--gc-sections \
+		-flto \
+		-Wl,-u,main,-T,$(LDFILE),-Map,$(OBJECTS_DIR)/$(PROJECT).map,--print-memory-usage,--gc-sections,--relax \
 		$(MARCH) $(MABI) \
 	
 all: create $(TARGET)
@@ -98,7 +99,7 @@ create:
 
 $(TARGET): $(OBJECTS)
 	$(Print) LD $@
-	@$(CC) -o $@ $(OBJECTS) $(LDFLAGS) $(CFLAGS) $(LIBC) $(LIBM)
+	@$(CC) -o $@ $(OBJECTS) $(LDFLAGS) $(CFLAGS)
 	$(Print) OBJCOPY $(@)
 	@$(OBJCOPY) -O binary $(@) $(@:.elf=.bin)
 	@$(OBJCOPY) -O ihex $(@) $(@:.elf=.hex)
