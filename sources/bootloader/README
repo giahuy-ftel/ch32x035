@@ -1,0 +1,34 @@
+# CH32X035F8U6 Bootloader & Host Tool Guide
+
+## Pin Configurations
+- MCU A1: Boot Pin
+- MCU A2 --> Probe RX
+- MCU A3 --> Probe TX
+
+## Bootloader Build
+From this directory, run:
+```bash
+make flash_combined
+```
+This should generate `build/bootloader.bin` and `build/update.bin` (image).
+
+## Host Tool Build
+From this directory, run:
+```bash
+make tool
+```
+This should generate `pctool.bin` and put it in `/usr/local/bin`.
+
+## Tool Test
+Run:
+```bash
+pctool /dev/ttyACM0 ./build/update.bin
+```
+
+Expected Output:
+```bash
+0x00000000
+...
+0xFFFFFFFF
+Firmware Update Successful
+```

@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-#include "bsp_cfg.h"
-#include "ch32x035.h"
 #include "ch32x035_gpio.h"
 
 void delay_loop(volatile uint32_t count);

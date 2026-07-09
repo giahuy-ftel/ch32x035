@@ -8,3 +8,6 @@
 
 # VS Code state
 /.vscode/*.log
+
+#Bootloader build
+/sources/bootloader/build

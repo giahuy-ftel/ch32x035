@@ -72,7 +72,7 @@ typedef struct
 /* USART_Stop_Bits */
 #define USART_StopBits_1                     ((uint16_t)0x0000)
 #define USART_StopBits_0_5                   ((uint16_t)0x1000)
-#define USART_StopBits_2                     ((uint16_t)0x2000)
+#define USART_StopBits_2                     ((uint 16_t)0x2000)
 #define USART_StopBits_1_5                   ((uint16_t)0x3000)
 
 /* USART_Parity */
